@@ -19,8 +19,8 @@ def choice_from_list(llist, start=1, prompt='Select a valid number: '):
   return llist[choice-start]
 
 prompt = """
-                UNINA SCRAPER
-        Made with <3 by Cristiano Salerno
+                        UNINA SCRAPER
+              Made with <3 by Cristiano Salerno
 ---
 Questo tool è in grado di scaricare tutti i file caricati da un professore su
 WebDocenti in maniera automatica, al patto di fornire allo strumento
@@ -94,9 +94,9 @@ def download_files(directory):
         handler.write(rget(file_format.format(id_file=f.id_)).content)
   
   for f in fs:
-    print('Download {} in corso...'.format(f.name))
+    print('Download {} in corso... '.format(f.name), end='', flush=True)
     _download(f)
-    print('Download {} terminato!'.format(f.name))
+    print('OK')
 
 # 7. explore all teaching folders
 while dirs_to_explore:
