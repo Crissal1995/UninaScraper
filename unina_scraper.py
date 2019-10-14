@@ -2,7 +2,7 @@ import requests
 import getpass
 import pathlib
 import urllib3
-from unina_scraper_model import *
+from unina_scraper_model import Teaching, Directory, File
 
 # utility function
 def choice_from_list(llist, start=1, prompt='Select a valid number: '):
@@ -28,7 +28,7 @@ delle credenziali valide ed essersi iscritti al corso in questione.
 
 L'unico parametro richiesto è l'ID del professore; per ottenerlo basta
 semplicemente andare su WebDocenti, aprire la pagina di un professore, e prendere
-la lunga stringa di numeri e lettere compresa fra due slash /
+la lunga stringa di numeri e lettere compresa fra i due slash /
 """
 print(prompt.strip())
 print()
@@ -59,12 +59,12 @@ teaching = choice_from_list(teachings, prompt='Scegli un insegnamento: ')
 print(teaching)
 name = teaching.name
 id_teaching = teaching.id_
-# cod_ins = teaching.cod_inse
-# get root dir for that teaching
-directory = Directory(rget(get_folders_format.format(id_prof=id_prof, id_=id_teaching)).json())
-# create root folder
-mkdir(directory.path)
-dirs_to_explore = [directory]
+# get root dir for that teaching and create it too in filesystem
+rootdir = Directory(rget(get_folders_format.format(id_prof=id_prof, id_=id_teaching)).json())
+mkdir(rootdir.path)
+# setup dirs to explore
+dirs_to_explore = [rootdir]
+paths_already_explored = []
 
 def download_files(directory):
   fs = [f for f in directory.content if f.is_file()]
@@ -82,8 +82,17 @@ while dirs_to_explore:
   currdir = dirs_to_explore.pop(0)
   if isinstance(currdir, File):
     currdir = Directory(rget(get_folders_format.format(id_prof=id_prof, id_=currdir.id_)).json())
+  # now I know currdir is a Directory object
+  #
+  # if it was already explored continue to next directory
+  if currdir.path in paths_already_explored:
+    continue
+  # else I can append its path (unique, while obj ref no)
+  # to the paths explored
+  paths_already_explored.append(currdir.path)
+  # and then I can work
   mkdir(currdir.path)
   download_files(currdir)
-  dirs_to_explore += [d for d in directory.content if d.is_dir()]
+  dirs_to_explore += [d for d in currdir.content if d.is_dir()]
 
 print('Finito! Arrivederci...')
