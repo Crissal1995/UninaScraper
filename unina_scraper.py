@@ -2,7 +2,8 @@ import requests
 import getpass
 import pathlib
 import urllib3
-from unina_scraper_model import Teaching, Directory, File
+from urllib.parse import quote, unquote
+from unina_scraper_model import *
 
 # utility function
 def choice_from_list(llist, start=1, prompt='Select a valid number: '):
@@ -18,26 +19,20 @@ def choice_from_list(llist, start=1, prompt='Select a valid number: '):
   return llist[choice-start]
 
 prompt = """
-### UNINA SCRAPER ###
-Made with <3 by Cristiano Salerno
-
+                UNINA SCRAPER
+        Made with <3 by Cristiano Salerno
 ---
 Questo tool è in grado di scaricare tutti i file caricati da un professore su
 WebDocenti in maniera automatica, al patto di fornire allo strumento
 delle credenziali valide ed essersi iscritti al corso in questione.
-
-L'unico parametro richiesto è l'ID del professore; per ottenerlo basta
-semplicemente andare su WebDocenti, aprire la pagina di un professore, e prendere
-la lunga stringa di numeri e lettere compresa fra i due slash /
 """
-print(prompt.strip())
-print()
+print(prompt)
+print('Inserire le credenziali Segrepass/WebDocenti [username@studenti.unina.it]')
 username = input('Username: ')
 password = getpass.getpass()
 auth = (username, password)
-# headers = {'user-agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36'}
-# id_prof = input('ID del professore: ')
-id_prof = '56494e43454e5a4f4d4f534341544f4d534356434e37384d31354331323947'
+
+# base path for saving scraped files
 basepath = pathlib.Path.cwd() / 'unina_scraper'
 
 # disable warning for don't using SSL
@@ -48,24 +43,50 @@ rget = lambda url: requests.get(url, auth=auth, verify=False)
 mkdir = lambda path: pathlib.Path.mkdir(basepath / path, parents=True, exist_ok=True)
 
 # str formats
+search_prof = 'https://www.docenti.unina.it/webdocenti-be/docenti?nome={name}&s=1000'
 get_teachings_format = 'https://www.docenti.unina.it/webdocenti-be/docenti/{id_prof}/materiale-didattico/areapubb/?codIns='
 get_folders_format = 'https://www.docenti.unina.it/webdocenti-be/docenti/{id_prof}/materiale-didattico/areapubb/{id_}?codIns='
-# folder_format = 'https://www.docenti.unina.it/webdocenti-be/docenti/{prof_id}/materiale-didattico/areapubb/{id_}?codIns={cod_ins}'
 file_format = 'https://www.docenti.unina.it/webdocenti-be/allegati/materiale-didattico/{id_file}'
 
+# 1. select teacher
+selected = False
+while not selected:
+  t_name = quote(input('Inserisci nome e cognome del professore desiderato: '))
+  teachers = [Teacher(t) for t in rget(search_prof.format(name=t_name)).json()['content']]
+  if not teachers:
+    print("Risultato vuoto per", unquote(t_name))
+    continue
+  elif len(teachers) == 1:
+    teacher = teachers[0]
+    print("Trovato un solo professore:", teacher)
+  else:
+    teacher = choice_from_list(teachers, prompt='Selezionare l\'insegnante desiderato: ')
+  selected = True
+
+# 2. parse id
+id_prof = teacher.id_
+
+# 3. parse teachings
 teachings = [Teaching(val) for val in rget(get_teachings_format.format(id_prof=id_prof)).json()]
-# select a single teaching
-teaching = choice_from_list(teachings, prompt='Scegli un insegnamento: ')
+# 3a. select a single teaching
+teaching = choice_from_list(teachings, prompt="Scegli un insegnamento: ")
 print(teaching)
+# 3b. parse info from teaching
 name = teaching.name
 id_teaching = teaching.id_
-# get root dir for that teaching and create it too in filesystem
+
+# 4. get root dir for that teaching
 rootdir = Directory(rget(get_folders_format.format(id_prof=id_prof, id_=id_teaching)).json())
+# 4a. create root dir in filesystem too
 mkdir(rootdir.path)
-# setup dirs to explore
+
+# 5. setup dirs to explore
 dirs_to_explore = [rootdir]
 paths_already_explored = []
 
+# 6. utility function to download all files from dir
+#   TODO: check if is already downloaded and,
+#   if yes, if last-modified dates match or not
 def download_files(directory):
   fs = [f for f in directory.content if f.is_file()]
   def _download(f):
@@ -77,22 +98,24 @@ def download_files(directory):
     _download(f)
     print('Download {} terminato!'.format(f.name))
 
-
+# 7. explore all teaching folders
 while dirs_to_explore:
+  # 7a. get first dir from the ones to explore
   currdir = dirs_to_explore.pop(0)
+  # 7b. if it's a File, cast it to Directory with a GET
   if isinstance(currdir, File):
     currdir = Directory(rget(get_folders_format.format(id_prof=id_prof, id_=currdir.id_)).json())
-  # now I know currdir is a Directory object
-  #
-  # if it was already explored continue to next directory
+  # 7c. now currdir is a Directory object
+  #   but if it was already explored continue to next directory
   if currdir.path in paths_already_explored:
     continue
-  # else I can append its path (unique, while obj ref no)
-  # to the paths explored
+  # 7d. else I can append its path (that's unique)
+  #   to the paths explored
   paths_already_explored.append(currdir.path)
-  # and then I can work
+  # 7e. and then I can work
   mkdir(currdir.path)
   download_files(currdir)
   dirs_to_explore += [d for d in currdir.content if d.is_dir()]
 
+# 8. Done
 print('Finito! Arrivederci...')

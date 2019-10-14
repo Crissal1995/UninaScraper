@@ -7,6 +7,24 @@ def fix_name(name, delimiter=' '):
     string = '/' + string[1].upper() + string[2:]
   return string
 
+class Teacher:
+  def __init__(self, d):
+    self._parse_from_vals(
+      d.get('id'), d.get('nome'), d.get('cognome'), d.get('cognome')
+    )
+  
+  def _parse_from_vals(self, id_, name, surname, dipartimento):
+    self.id_ = id_
+    self.name = name.capitalize()
+    self.surname = surname.capitalize()
+    self.dipartimento = dipartimento
+  
+  def __str__(self):
+    return '{name} {surname} (dipartimento {dip})'.format(
+      name=self.name, surname=self.surname, 
+      dip=self.dipartimento if self.dipartimento else 'mancante'
+    )
+
 class Teaching:
   def __init__(self, d):
     self._parse_from_vals(
