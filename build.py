@@ -1,22 +1,31 @@
-import python_minifier as mini
+try:
+  import python_minifier as mini
+  has_mini = True
+except ImportError:
+  has_mini = False
 import os
 
 files = ['unina_scraper_model.py', 'unina_scraper.py']
-outfile = 'scraper_minified.py'
+outfile = 'scraper.py'
 forbidden_lines = ['from unina_scraper_model import *\n']
 
 # clean outfile if it already exists
-os.remove(outfile)
+# otherwise continue
+try:
+  os.remove(outfile)
+except FileNotFoundError:
+  pass
 
 with open(outfile, 'a') as out:
-    for f in files:
-        fh = open(f)
-        ls = fh.readlines()
-        out.writelines([l for l in ls if l not in forbidden_lines])
-        fh.close()
+  for f in files:
+      fh = open(f)
+      ls = fh.readlines()
+      out.writelines([l for l in ls if l not in forbidden_lines])
+      fh.close()
 
-with open(outfile) as out:
+if has_mini:
+  with open(outfile) as out:
     content = out.read()
 
-with open(outfile, 'w') as out:
+  with open(outfile, 'w') as out:
     out.write(mini.minify(content))
