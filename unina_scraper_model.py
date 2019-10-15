@@ -1,22 +1,24 @@
+import string
+
 # utility for fixing unina upper names
-def fix_name(name, delimiter=' '):
+def fix_name(name, delimiter=' ', split='_'):
   if not name:  # empty or None
     return ''
-  string = delimiter.join(elem.capitalize() for elem in name.split('_'))
-  if string[0] in '/\\.-':  # fix path elements
-    string = '/' + string[1].upper() + string[2:]
-  return string
+  name = delimiter.join(elem.capitalize() for elem in name.split(split))
+  if name[0] not in string.ascii_letters:
+    name = name[1].upper() + name[2:]
+  return name
 
 class Teacher:
   def __init__(self, d):
     self._parse_from_vals(
-      d.get('id'), d.get('nome'), d.get('cognome'), d.get('cognome')
+      d.get('id'), d.get('nome'), d.get('cognome'), d.get('dipartimento')
     )
   
   def _parse_from_vals(self, id_, name, surname, dipartimento):
     self.id_ = id_
-    self.name = name.capitalize()
-    self.surname = surname.capitalize()
+    self.name = fix_name(name, split=' ')
+    self.surname = fix_name(surname, split=' ')
     self.dipartimento = dipartimento
   
   def __str__(self):
@@ -55,7 +57,7 @@ class Directory:
     )
   
   def _parse_from_vals(self, path, free, isdir, public, content, teachings, delete):
-    self.path = fix_name(path, delimiter='_')[1:]
+    self.path = fix_name(path, delimiter='_')
     self.free = free
     self.isdir = isdir
     self.public = public
@@ -76,7 +78,7 @@ class File:
   def _parse_from_vals(self, name, id_, public, free, type_, path, timestamp, cod_ins):
     self.name = name
     self.id_ = id_
-    self.path = fix_name(path, delimiter='_')[1:]
+    self.path = fix_name(path, delimiter='_')
     self.public = public
     self.free = free
     self.type_ = type_

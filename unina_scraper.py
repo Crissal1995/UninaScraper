@@ -49,6 +49,7 @@ get_folders_format = 'https://www.docenti.unina.it/webdocenti-be/docenti/{id_pro
 file_format = 'https://www.docenti.unina.it/webdocenti-be/allegati/materiale-didattico/{id_file}'
 
 # 1. select teacher
+print()
 selected = False
 while not selected:
   t_name = quote(input('Inserisci nome e cognome del professore desiderato: '))
@@ -68,9 +69,12 @@ id_prof = teacher.id_
 
 # 3. parse teachings
 teachings = [Teaching(val) for val in rget(get_teachings_format.format(id_prof=id_prof)).json()]
+if not teachings:
+  raise ValueError('Il professore {t} non ha alcun insegnamento associato!'.format(t=teacher))
 # 3a. select a single teaching
+print()
 teaching = choice_from_list(teachings, prompt="Scegli un insegnamento: ")
-print(teaching)
+print('\nInsegnamento scelto:\n{t}'.format(t=teaching))
 # 3b. parse info from teaching
 name = teaching.name
 id_teaching = teaching.id_
