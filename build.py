@@ -18,10 +18,10 @@ except FileNotFoundError:
 
 with open(outfile, 'a') as out:
   for f in files:
-      fh = open(f)
-      ls = fh.readlines()
-      out.writelines([l for l in ls if l not in forbidden_lines])
-      fh.close()
+    fh = open(f)
+    ls = fh.readlines()
+    out.writelines([l for l in ls if l not in forbidden_lines])
+    fh.close()
 
 if has_mini:
   with open(outfile) as out:

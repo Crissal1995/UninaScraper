@@ -1,6 +1,7 @@
 # remove everything scraped from git
 unina_scraper/*
-*scraper*.py
+
+scraper*.py
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
