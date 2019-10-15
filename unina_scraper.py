@@ -24,10 +24,11 @@ prompt = """
 ---
 Questo tool è in grado di scaricare tutti i file caricati da un professore su
 WebDocenti in maniera automatica, al patto di fornire allo strumento
-delle credenziali valide ed essersi iscritti al corso in questione.
+delle credenziali valide ed essersi iscritti al corso in questione
+se l'accesso al materiale è bloccato ad utenti non autenticati.
 """
 print(prompt)
-print('Inserire le credenziali Segrepass/WebDocenti [username@studenti.unina.it]')
+print('Inserire le credenziali Unina [username@studenti.unina.it]')
 username = input('Username: ')
 password = getpass.getpass()
 auth = (username, password)
@@ -80,7 +81,15 @@ name = teaching.name
 id_teaching = teaching.id_
 
 # 4. get root dir for that teaching
-rootdir = Directory(rget(get_folders_format.format(id_prof=id_prof, id_=id_teaching)).json())
+dirjson = rget(get_folders_format.format(id_prof=id_prof, id_=id_teaching)).json()
+if dirjson.get('code') and int(dirjson['code']) == 403:
+  raise ConnectionRefusedError(
+    'Devi essere autenticato ed iscritto al corso '
+    'per poter visualizzare questo contenuto!'
+  )
+rootdir = Directory(dirjson)
+if not rootdir.content:
+  raise ValueError("La cartella dell'insegnamento è vuota!")
 # 4a. create root dir in filesystem too
 mkdir(rootdir.path)
 

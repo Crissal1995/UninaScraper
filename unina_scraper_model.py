@@ -19,7 +19,7 @@ class Teacher:
     self.id_ = id_
     self.name = fix_name(name, split=' ')
     self.surname = fix_name(surname, split=' ')
-    self.dipartimento = dipartimento
+    self.dipartimento = fix_name(dipartimento, split='-').strip()
   
   def __str__(self):
     return '{name} {surname} (dipartimento {dip})'.format(
